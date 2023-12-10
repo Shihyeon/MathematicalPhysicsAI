@@ -38,29 +38,47 @@ optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)  # lr = learning rate
 
 
 loss_list = []
+list = []
+# list_str = []
 
-for epoch in range(1, 1000+1):
+epoch_range = 1000+1
+
+for epoch in range(epoch_range):
     input_t = torch.arange(a*8)*dt
-    model.train()
     st = model(input_t)
+    model.train()
+
     ut = u0.detach().clone()
 
-    for T in range(a*8):
+    for T in range(1, a*8):
         dudt = -1j*torch.matmul(H(st[T], T), ut)
-        ut += dudt*dt
+        ut = ut + dudt*dt
     
-    p = torch.square(torch.matmul(torch.matmul(torch.tensor([[0,1]])*(1.+0j), ut), torch.tensor([[1],[0]])*(1*0j)).abs())[0]
-
-    loss = -torch.log(p).requires_grad_(True)
-    loss_list.append(loss.item())
+    p = torch.square(torch.matmul(torch.matmul(torch.tensor([[0, 1]]) * (1. + 0j), ut), torch.tensor([[1], [0]])*(1. + 0j)).abs())[0]
+    p_scalar = p.sum()
+    # print("p:", p.size(), "st:", st.size())
+    loss = -torch.log(p_scalar).requires_grad_(True)
+    # print("log:", loss.size())
+    # loss = torch.sum(st**2).requires_grad_(True)
+    # print("sum:", loss.size())
+    # print()
     loss.backward()
+    loss_list.append(loss.item())
     optimizer.step()
     optimizer.zero_grad()
 
-    if epoch % 50 == 1:
-        
+    # plt.plot(T, loss[0])
+    # plt.show()
+    if epoch % 10 == 1:
         print(loss)
-        print(ut)
-        plt.plot(st.detach().numpy(), 'b.')
-        plt.show()
+    #     print(ut)
+    #     plt.plot(st.detach().numpy(), 'b.')
+    #     plt.show()
+        
+        list.append(loss.item())
+        # list_str.append(str(loss.item()))
+        
 
+plt.plot(list, 'b.')
+plt.show()
+# print(list_str)
